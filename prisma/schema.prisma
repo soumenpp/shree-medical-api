@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(OWNER)
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bills     Bill[]
+
+  @@map("users")
+}
+
+model Store {
+  id          String    @id @default(uuid())
+  name        String
+  address     String
+  phone       String
+  email       String?
+  gstin       String?
+  logo        String?
+  ownerId     String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  medicines   Medicine[]
+  bills       Bill[]
+  users       User[]
+
+  @@map("stores")
+}
+
+model Medicine {
+  id            String    @id @default(uuid())
+  name          String
+  genericName   String?
+  brand         String?
+  type          MedType   @default(TABLET)
+  strength      String
+  stripSize     Int
+  pricePerStrip Decimal   @db.Decimal(10, 2)
+  pricePerUnit  Decimal   @db.Decimal(10, 2)
+  qrCode        String?   @unique
+  barcode       String?   @unique
+  description   String?
+  imageUrl      String?
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  inventory     Inventory?
+  billItems     BillItem[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([qrCode])
+  @@index([barcode])
+  @@map("medicines")
+}
+
+model Inventory {
+  id            String    @id @default(uuid())
+  medicineId    String    @unique
+  medicine      Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  stripsInStock Int       @default(0)
+  unitsInStock  Int       @default(0)
+  minStockLevel Int       @default(10)
+  batchNumber   String?
+  expiryDate    DateTime?
+  lastRestocked DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("inventory")
+}
+
+model Bill {
+  id          String     @id @default(uuid())
+  billNumber  String     @unique
+  storeId     String
+  store       Store      @relation(fields: [storeId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  items       BillItem[]
+  subtotal    Decimal    @db.Decimal(10, 2)
+  discount    Decimal    @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal    @db.Decimal(10, 2)
+  status      BillStatus @default(COMPLETED)
+  pdfUrl      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([billNumber])
+  @@index([createdAt])
+  @@map("bills")
+}
+
+model BillItem {
+  id           String   @id @default(uuid())
+  billId       String
+  bill         Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  medicineId   String
+  medicine     Medicine @relation(fields: [medicineId], references: [id])
+  quantity     Int
+  unitType     UnitType @default(TABLET)
+  pricePerUnit Decimal  @db.Decimal(10, 2)
+  totalPrice   Decimal  @db.Decimal(10, 2)
+
+  @@map("bill_items")
+}
+
+enum Role {
+  OWNER
+  STAFF
+  ADMIN
+}
+
+enum MedType {
+  TABLET
+  CAPSULE
+  SYRUP
+  INJECTION
+  CREAM
+  DROPS
+  INHALER
+  POWDER
+}
+
+enum UnitType {
+  STRIP
+  TABLET
+  CAPSULE
+  BOTTLE
+  ML
+  UNIT
+}
+
+enum BillStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
