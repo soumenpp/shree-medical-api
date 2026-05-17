@@ -40,4 +40,4 @@ build/
 coverage/
 
 # Prisma
-prisma/migrations/
+prisma/migrations/.env 
