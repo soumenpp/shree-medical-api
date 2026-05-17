@@ -29,21 +29,23 @@ medical-store-backend/
 ## 🚀 Quick Deploy
 
 ```bash
-# 1. Clone & configure
-cp .env.example .env
-nano .env
+# 1. Clone
+cd /root
+git clone git@github.com:soumenpp/shree-medical-api.git
+cd shree-medical-api
 
-# 2. Install & run
+# 2. Configure
+nano .env    # Set DATABASE_URL
+
+# 3. Install & run
 npm install
-npx prisma generate
-npx prisma migrate dev
-npx prisma db seed
-npm start
+npx prisma migrate dev --name init
+node src/app.js
 ```
 
 Or **one-line install**:
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/soumenpp/medical-store-backend/main/setup.sh)
+bash <(curl -sL https://raw.githubusercontent.com/soumenpp/shree-medical-api/main/setup.sh)
 ```
 
 ---
